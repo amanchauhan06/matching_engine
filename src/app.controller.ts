@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { MessagePattern } from '@nestjs/microservices';
 import { AppService } from './app.service';
 
 @Controller()
@@ -11,8 +11,9 @@ export class AppController {
     return this.appService.getHello();
   }
 
-  @EventPattern('startTrading')
+  @MessagePattern('startTrading')
   handleStartTrading(data: string) {
-    this.appService.startTrading(data);
+    console.log('I am here');
+    return this.appService.startTrading(data);
   }
 }

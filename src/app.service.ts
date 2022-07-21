@@ -1,62 +1,191 @@
-import { Injectable } from '@nestjs/common';
-import { ExchangeOrderRequestDTO } from './order.dto';
+import { Inject, Injectable } from '@nestjs/common';
+import Redis from 'ioredis';
+import { ExchangeOrderRequestDTO, OrderStatus, OrderType } from './order.dto';
+import { Trade } from './trade.dto';
 
 @Injectable()
 export class AppService {
-  buyOrderRequest: Array<ExchangeOrderRequestDTO>;
-  sellOrderRequest: Array<ExchangeOrderRequestDTO>;
-  completedORderRequest: Array<ExchangeOrderRequestDTO>;
+  @Inject('REDIS_CLIENT') private readonly redis: Redis;
+  buyOrderRequest: Array<ExchangeOrderRequestDTO> = [];
+  sellOrderRequest: Array<ExchangeOrderRequestDTO> = [];
+  completedORderRequest: Array<ExchangeOrderRequestDTO> = [];
   lastTradedPrice: number = 10.0;
   isMatchingEngineActive: boolean = false;
   getHello(): string {
     return 'Hello World!';
   }
 
-  startTrading(data: string) {
+  async startTrading(data: string) {
     console.log('Start Trading, data: ' + data);
     for (var i = 0; i < 25; i++) {
-      let price: number = parseInt((Math.random() * 10).toFixed(2));
-      // quantity:number = Random().nextInt(8) + 1;
-      // await Future.delayed(const Duration(seconds: 1));
-      // if (i.isOdd) {
-      //   engine.addOrder(Order(
-      //       type: OrderType.buy,
-      //       price: price.floorToDouble(),
-      //       trades: [],
-      //       quantity: quantity,
-      //       orderStatus: OrderStatus.pending));
-      // }
-      // if (i.isEven) {
-      //   engine.addOrder(Order(
-      //       type: OrderType.sell,
-      //       price: price.floorToDouble(),
-      //       trades: [],
-      //       quantity: quantity,
-      //       orderStatus: OrderStatus.pending));
-      // }
+      let price: number = parseInt((Math.random() * 4 + 8).toFixed(2));
+      let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (i % 2 !== 0) {
+        this.addOrder(
+          new ExchangeOrderRequestDTO(
+            price,
+            quantity,
+            0,
+            'ABC',
+            OrderType.buy,
+            [],
+            OrderStatus.pending,
+          ),
+        );
+      }
+      if (i % 2 === 0) {
+        this.addOrder(
+          new ExchangeOrderRequestDTO(
+            price,
+            quantity,
+            0,
+            'ABC',
+            OrderType.sell,
+            [],
+            OrderStatus.pending,
+          ),
+        );
+      }
+    }
+    return this.lastTradedPrice;
+  }
+
+  addOrder(order: ExchangeOrderRequestDTO) {
+    if (order.orderTpe == OrderType.buy) {
+      let index: number = this.buyOrderRequest.findIndex(
+        (element) => element.price < order.price,
+      );
+      if (index < 0) {
+        this.buyOrderRequest.push(order);
+      } else {
+        this.buyOrderRequest.splice(index, 0, order);
+      }
+    } else {
+      let index: number = this.sellOrderRequest.findIndex(
+        (element) => element.price > order.price,
+      );
+      if (index < 0) {
+        this.sellOrderRequest.push(order);
+      } else {
+        this.sellOrderRequest.splice(index, 0, order);
+      }
+    }
+    if (!this.isMatchingEngineActive) {
+      this.matchingEngine();
     }
   }
 
-  // addOrder(Order order) {
-  //   if (order.type == OrderType.buy) {
-  //     int index =
-  //         buyOrderRequests.indexWhere((element) => element.price < order.price);
-  //     if (index < 0) {
-  //       buyOrderRequests.add(order);
-  //     } else {
-  //       buyOrderRequests.insert(index, order);
-  //     }
-  //   } else {
-  //     int index = sellOrderRequests
-  //         .indexWhere((element) => element.price > order.price);
-  //     if (index < 0) {
-  //       sellOrderRequests.add(order);
-  //     } else {
-  //       sellOrderRequests.insert(index, order);
-  //     }
-  //   }
-  //   if (!isMatchingEngineActive) {
-  //     _matchingEngine();
-  //   }
-  // }
+  private async matchingEngine() {
+    this.isMatchingEngineActive = true;
+    let i: number = 0;
+    while (i < this.buyOrderRequest.length) {
+      let incrementNeeded: boolean = true;
+      for (var j = 0; j < this.sellOrderRequest.length; j++) {
+        const leftOverBuyQuantity: number =
+          this.buyOrderRequest[i].quantity -
+          this.buyOrderRequest[i].tradedQuantity;
+        const leftOverSellQuantity =
+          this.sellOrderRequest[j].quantity -
+          this.sellOrderRequest[j].tradedQuantity;
+        if (this.buyOrderRequest[i].price >= this.sellOrderRequest[j].price) {
+          if (leftOverBuyQuantity == leftOverSellQuantity) {
+            this.buyOrderRequest[i].orderStatus = OrderStatus.completed;
+            this.sellOrderRequest[j].orderStatus = OrderStatus.completed;
+            this.buyOrderRequest[i].tradedQuantity += leftOverSellQuantity;
+            this.sellOrderRequest[i].tradedQuantity += leftOverSellQuantity;
+            this.lastTradedPrice = this.sellOrderRequest[j].price;
+            this.redis.publish(
+              'trade',
+              JSON.stringify({ price: this.lastTradedPrice }),
+            );
+            // this.redis.publish('trade', `${this.lastTradedPrice}`);
+            this.buyOrderRequest[i].trades.push(
+              new Trade(leftOverSellQuantity, this.lastTradedPrice),
+            );
+            this.sellOrderRequest[j].trades.push(
+              new Trade(leftOverSellQuantity, this.lastTradedPrice),
+            );
+            this.completedORderRequest.push(
+              ...[this.buyOrderRequest[i], this.sellOrderRequest[j]],
+            );
+            console.log(
+              '1Buy price: ' + this.buyOrderRequest[i].price,
+              '1Buy quantity:' + leftOverBuyQuantity,
+            );
+            console.log(
+              '1Sell price:' + this.sellOrderRequest[j].price,
+              '1Sell quantity:' + leftOverSellQuantity,
+            );
+            this.buyOrderRequest.splice(i, 1);
+            this.sellOrderRequest.splice(j, 1);
+            console.log(this.lastTradedPrice);
+            incrementNeeded = false;
+            break;
+          } else if (leftOverBuyQuantity > leftOverSellQuantity) {
+            this.buyOrderRequest[i].orderStatus = OrderStatus.partiallyFilled;
+            this.sellOrderRequest[j].orderStatus = OrderStatus.completed;
+            this.buyOrderRequest[i].tradedQuantity += leftOverSellQuantity;
+            this.sellOrderRequest[j].tradedQuantity += leftOverSellQuantity;
+            this.lastTradedPrice = this.sellOrderRequest[j].price;
+            this.redis.publish(
+              'trade',
+              JSON.stringify({ price: this.lastTradedPrice }),
+            );
+            // this.redis.publish('trade', JSON.stringify(this.lastTradedPrice));
+            this.buyOrderRequest[i].trades.push(
+              new Trade(leftOverSellQuantity, this.lastTradedPrice),
+            );
+            this.sellOrderRequest[j].trades.push(
+              new Trade(leftOverSellQuantity, this.lastTradedPrice),
+            );
+            this.completedORderRequest.push(...[this.sellOrderRequest[j]]);
+            console.log(
+              '2Buy price: ' + this.buyOrderRequest[i].price,
+              '2Buy quantity:' + leftOverBuyQuantity,
+            );
+            console.log(
+              '2Sell price:' + this.sellOrderRequest[j].price,
+              '2Sell quantity:' + leftOverSellQuantity,
+            );
+            console.log(this.lastTradedPrice);
+            this.sellOrderRequest.splice(j, 1);
+            incrementNeeded = false;
+          } else if (leftOverBuyQuantity < leftOverSellQuantity) {
+            this.buyOrderRequest[i].orderStatus = OrderStatus.completed;
+            this.sellOrderRequest[j].orderStatus = OrderStatus.partiallyFilled;
+            this.buyOrderRequest[i].tradedQuantity += leftOverBuyQuantity;
+            this.sellOrderRequest[j].tradedQuantity += leftOverBuyQuantity;
+            this.lastTradedPrice = this.sellOrderRequest[j].price;
+            this.redis.publish(
+              'trade',
+              JSON.stringify({ price: this.lastTradedPrice }),
+            );
+            // this.redis.publish('trade', JSON.stringify(this.lastTradedPrice));
+            this.buyOrderRequest[i].trades.push(
+              new Trade(leftOverBuyQuantity, this.lastTradedPrice),
+            );
+            this.sellOrderRequest[j].trades.push(
+              new Trade(leftOverBuyQuantity, this.lastTradedPrice),
+            );
+            this.completedORderRequest.push(...[this.buyOrderRequest[i]]);
+            console.log(
+              '3Buy price: ' + this.buyOrderRequest[i].price,
+              '3Buy quantity:' + leftOverBuyQuantity,
+            );
+            console.log(
+              '3Sell price:' + this.sellOrderRequest[j].price,
+              '3Sell quantity:' + leftOverSellQuantity,
+            );
+            console.log(this.lastTradedPrice);
+            this.buyOrderRequest.splice(i, 1);
+            incrementNeeded = true;
+            break;
+          }
+        }
+      }
+      if (incrementNeeded) i++;
+    }
+    this.isMatchingEngineActive = false;
+  }
 }
