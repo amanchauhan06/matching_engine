@@ -1,4 +1,4 @@
-class Trade {
+export class Trade {
   tradedPrice: number;
   tradedQuantity: number;
 
