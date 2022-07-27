@@ -11,9 +11,6 @@ export class AppService {
   completedORderRequest: Array<ExchangeOrderRequestDTO> = [];
   lastTradedPrice: number = 10.0;
   isMatchingEngineActive: boolean = false;
-  getHello(): string {
-    return 'Hello World!';
-  }
 
   async startTrading(data: string) {
     console.log('Start Trading, data: ' + data);
