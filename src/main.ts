@@ -8,7 +8,7 @@ async function bootstrap() {
   await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
     transport: Transport.REDIS,
     options: {
-      url: 'redis://localhost:6379',
+      url: process.env.REDIS_URL||'redis://localhost:6379',
     },
   }).then((val) => {
     console.log('Started');
