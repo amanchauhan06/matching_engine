@@ -1,10 +1,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 import { ExchangeOrderRequestDTO, OrderStatus, OrderType } from './order.dto';
+import { OrderModel } from './order.model';
+import { OrderRepository } from './order.repository';
 import { Trade } from './trade.dto';
 
+enum CompleteOrderType {
+  equal,
+  buyMore,
+  sellMore,
+}
 @Injectable()
 export class AppService {
+  constructor(private readonly orderRepo: OrderRepository) {}
   @Inject('REDIS_CLIENT') private readonly redis: Redis;
   buyOrderRequest: Array<ExchangeOrderRequestDTO> = [];
   sellOrderRequest: Array<ExchangeOrderRequestDTO> = [];
@@ -94,12 +102,16 @@ export class AppService {
             this.sellOrderRequest[j].orderStatus = OrderStatus.completed;
             this.buyOrderRequest[i].tradedQuantity += leftOverSellQuantity;
             this.sellOrderRequest[i].tradedQuantity += leftOverSellQuantity;
+            this.saveOrder(
+              this.sellOrderRequest[j],
+              this.buyOrderRequest[i],
+              CompleteOrderType.equal,
+            );
             this.lastTradedPrice = this.sellOrderRequest[j].price;
             this.redis.publish(
               'trade',
               JSON.stringify({ price: this.lastTradedPrice }),
             );
-            // this.redis.publish('trade', `${this.lastTradedPrice}`);
             this.buyOrderRequest[i].trades.push(
               new Trade(leftOverSellQuantity, this.lastTradedPrice),
             );
@@ -127,12 +139,16 @@ export class AppService {
             this.sellOrderRequest[j].orderStatus = OrderStatus.completed;
             this.buyOrderRequest[i].tradedQuantity += leftOverSellQuantity;
             this.sellOrderRequest[j].tradedQuantity += leftOverSellQuantity;
+            this.saveOrder(
+              this.sellOrderRequest[j],
+              this.buyOrderRequest[i],
+              CompleteOrderType.buyMore,
+            );
             this.lastTradedPrice = this.sellOrderRequest[j].price;
             this.redis.publish(
               'trade',
               JSON.stringify({ price: this.lastTradedPrice }),
             );
-            // this.redis.publish('trade', JSON.stringify(this.lastTradedPrice));
             this.buyOrderRequest[i].trades.push(
               new Trade(leftOverSellQuantity, this.lastTradedPrice),
             );
@@ -156,12 +172,16 @@ export class AppService {
             this.sellOrderRequest[j].orderStatus = OrderStatus.partiallyFilled;
             this.buyOrderRequest[i].tradedQuantity += leftOverBuyQuantity;
             this.sellOrderRequest[j].tradedQuantity += leftOverBuyQuantity;
+            this.saveOrder(
+              this.sellOrderRequest[j],
+              this.buyOrderRequest[i],
+              CompleteOrderType.sellMore,
+            );
             this.lastTradedPrice = this.sellOrderRequest[j].price;
             this.redis.publish(
               'trade',
               JSON.stringify({ price: this.lastTradedPrice }),
             );
-            // this.redis.publish('trade', JSON.stringify(this.lastTradedPrice));
             this.buyOrderRequest[i].trades.push(
               new Trade(leftOverBuyQuantity, this.lastTradedPrice),
             );
@@ -187,5 +207,29 @@ export class AppService {
       if (incrementNeeded) i++;
     }
     this.isMatchingEngineActive = false;
+  }
+
+  saveOrder(
+    sellOrderRequest: ExchangeOrderRequestDTO,
+    buyOrderRequest: ExchangeOrderRequestDTO,
+    type: CompleteOrderType,
+  ) {
+    let order = new OrderModel();
+    order.last_price = this.lastTradedPrice;
+    order.price = sellOrderRequest.price;
+    order.name = sellOrderRequest.company;
+    order.updated_at = new Date().toLocaleString('en-US', {timeZone: 'Asia/Kolkata'});
+    if (type === CompleteOrderType.equal) {
+      order.traded_quantity =
+        sellOrderRequest.quantity - sellOrderRequest.tradedQuantity;
+    }else if(type === CompleteOrderType.buyMore){
+      order.traded_quantity =
+        sellOrderRequest.quantity - sellOrderRequest.tradedQuantity;
+    }else{
+      order.traded_quantity =
+        buyOrderRequest.quantity - buyOrderRequest.tradedQuantity;
+    }
+
+this.orderRepo.savePricesToDB(order);
   }
 }
