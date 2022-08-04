@@ -33,6 +33,6 @@ export class OrderRepository implements OnModuleInit {
     }
 
     async savePricesToDB(order: OrderModel) {
-        return (await this.stockPriceMapper.insert({...order, id: randomUUID()})).toArray();
+        return (await this.stockPriceMapper.insert(order)).toArray();
     }
 }
