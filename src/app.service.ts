@@ -4,6 +4,7 @@ import Redis from 'ioredis';
 import { ExchangeOrderRequestDTO, OrderStatus, OrderType } from './order.dto';
 import { OrderModel } from './order.model';
 import { OrderRepository } from './order.repository';
+import { OrderDto } from './stock_order.dto';
 import { Trade } from './trade.dto';
 
 enum CompleteOrderType {
@@ -24,46 +25,60 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async startTrading(data: string) {
-    console.log('Start Trading, data: ' + data);
-    for (var i = 0; i < 25; i++) {
-      let price: number = parseFloat((639 + Math.random() * 2).toFixed(2));
-      let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (i % 2 !== 0) {
-        this.addOrder(
-          new ExchangeOrderRequestDTO(
-            price,
-            quantity,
-            0,
-            'IRCTC',
-            randomUUID(),
-            OrderType.buy,
-            [],
-            OrderStatus.pending,
-          ),
-        );
-      }
-      if (i % 2 === 0) {
-        this.addOrder(
-          new ExchangeOrderRequestDTO(
-            price,
-            quantity,
-            0,
-            'IRCTC',
-            randomUUID(),
-            OrderType.sell,
-            [],
-            OrderStatus.pending,
-          ),
-        );
-      }
-    }
-    return this.lastTradedPrice;
+  async startTrading(data: OrderDto) {
+    console.log('Start Trading, data: ' + data.orderTpe);
+    this.addOrder(new ExchangeOrderRequestDTO(
+      data.price,
+      data.quantity,
+      0,
+      data.company,
+      data.userId,
+      data.orderTpe.toLowerCase() === 'buy' ? OrderType.buy : OrderType.sell,
+      [],
+      OrderStatus.pending,
+    ));
+    console.log('Start Trading Order 11');
+    return 'Order Place Successfully';
+    // for (var i = 0; i < 25; i++) {
+    //   let price: number = parseFloat((639 + Math.random() * 2).toFixed(2));
+    //   let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
+    //   await new Promise((resolve) => setTimeout(resolve, 1000));
+    //   if (i % 2 !== 0) {
+    //     this.addOrder(
+    //       new ExchangeOrderRequestDTO(
+    //         price,
+    //         quantity,
+    //         0,
+    //         'IRCTC',
+    //         randomUUID(),
+    //         OrderType.buy,
+    //         [],
+    //         OrderStatus.pending,
+    //       ),
+    //     );
+    //   }
+    //   if (i % 2 === 0) {
+    //     this.addOrder(
+    //       new ExchangeOrderRequestDTO(
+    //         price,
+    //         quantity,
+    //         0,
+    //         'IRCTC',
+    //         randomUUID(),
+    //         OrderType.sell,
+    //         [],
+    //         OrderStatus.pending,
+    //       ),
+    //     );
+    //   }
+    // }
+    // return 'Order Placed Successfully';
   }
 
   addOrder(order: ExchangeOrderRequestDTO) {
-    if (order.orderTpe == OrderType.buy) {
+    console.log('Add Order, order: ' + order.orderType);
+    if (order.orderType == OrderType.buy) {
+      console.log('Buy Add Order, order: ' + order);
       let index: number = this.buyOrderRequest.findIndex(
         (element) => element.price < order.price,
       );
@@ -90,8 +105,10 @@ export class AppService {
   private async matchingEngine() {
     this.isMatchingEngineActive = true;
     let i: number = 0;
+    console.log(this.buyOrderRequest.length);
     while (i < this.buyOrderRequest.length) {
       let incrementNeeded: boolean = true;
+      console.log('I am here in matching engine');
       for (var j = 0; j < this.sellOrderRequest.length; j++) {
         const leftOverBuyQuantity: number =
           this.buyOrderRequest[i].quantity -
@@ -170,7 +187,9 @@ export class AppService {
       }
       if (incrementNeeded) i++;
     }
+    console.log('I am here in matching engine 2');
     this.isMatchingEngineActive = false;
+    console.log('I am here in matching engine 3');
   }
 
   saveAndPublishOrder(
@@ -198,7 +217,11 @@ export class AppService {
       order.traded_quantity =
         buyOrderRequest.quantity - buyOrderRequest.tradedQuantity;
     }
-    this.redis.publish('trade', JSON.stringify(order));
+    // console.log(process.env.STOCK);
+    this.redis.publish(
+      process.env.STOCK_PUBSUB || 'mrf_pub',
+      JSON.stringify(order),
+    );
     this.orderRepo.savePricesToDB(order);
   }
 }
