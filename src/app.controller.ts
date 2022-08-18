@@ -1,17 +1,16 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AppService } from './app.service';
-import { OrderRepository } from './order.repository';
+import { OrderDto } from './stock_order.dto';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService,
-    private readonly appRepo: OrderRepository,
   ) {}
-  @MessagePattern('startTrading')
-  handleStartTrading(data: string) {
+  @MessagePattern(process.env.STOCK || 'mrf')
+  handleStartTrading(@Payload() data: OrderDto) {
     console.log('I am here');
-    return this.appService.startTrading(data);
+    return  this.appService.startTrading(data);
   }
 }

@@ -17,7 +17,7 @@ export class ExchangeOrderRequestDTO {
   tradedQuantity: number;
   company: string;
   userId: string;
-  orderTpe: OrderType;
+  orderType: OrderType;
   trades: Array<Trade>;
   orderStatus: OrderStatus;
 
@@ -36,7 +36,7 @@ export class ExchangeOrderRequestDTO {
     this.tradedQuantity = tradedQuantity;
     this.company = company;
     this.userId = userId;
-    this.orderTpe = orderTpe;
+    this.orderType = orderTpe;
     this.trades = trades;
     this.orderStatus = orderStatus;
   }

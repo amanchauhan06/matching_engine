@@ -8,11 +8,10 @@ export class CassandraService {
     private createClient() {
         this.client = new Client({
             contactPoints: 
-            ['localhost'],
+            ['aws:cassandra:ap-south-1:259850036060:/keyspace/stock_app_keyspace'],
             // ['0.0.0.0'],
             // applicationName: 'stock_data',
             keyspace: 'stock_price',
-            
             localDataCenter: 'datacenter1',
             authProvider: new auth.PlainTextAuthProvider('cassandra', 'cassandra')
         });
