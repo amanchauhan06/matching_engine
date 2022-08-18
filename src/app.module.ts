@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { createClient } from '@redis/client';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { CassandraModule } from './cassandra/cassandra.module';
 import { OrderRepository } from './order.repository';
 
 @Module({
@@ -25,9 +24,9 @@ import { OrderRepository } from './order.repository';
       },
     },
     AppService,
-    OrderRepository,
+    // OrderRepository,
   ],
   exports: ['REDIS_CLIENT'],
-  imports: [CassandraModule],
+  // imports: [CassandraModule],
 })
 export class AppModule {}

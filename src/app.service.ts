@@ -3,7 +3,6 @@ import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { ExchangeOrderRequestDTO, OrderStatus, OrderType } from './order.dto';
 import { OrderModel } from './order.model';
-import { OrderRepository } from './order.repository';
 import { OrderDto } from './stock_order.dto';
 import { Trade } from './trade.dto';
 
@@ -14,7 +13,7 @@ enum CompleteOrderType {
 }
 @Injectable()
 export class AppService {
-  constructor(private readonly orderRepo: OrderRepository) {}
+  // constructor(private readonly orderRepo: OrderRepository) {}
   @Inject('REDIS_CLIENT') private readonly redis: Redis;
   buyOrderRequest: Array<ExchangeOrderRequestDTO> = [];
   sellOrderRequest: Array<ExchangeOrderRequestDTO> = [];
@@ -222,6 +221,6 @@ export class AppService {
       process.env.STOCK_PUBSUB || 'mrf_pub',
       JSON.stringify(order),
     );
-    this.orderRepo.savePricesToDB(order);
+    // this.orderRepo.savePricesToDB(order);
   }
 }
