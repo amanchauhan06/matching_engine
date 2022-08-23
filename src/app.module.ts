@@ -10,7 +10,7 @@ import { AppService } from './app.service';
       provide: 'REDIS_OPTIONS',
       useValue: {
         url: process.env.REDIS_URL,
-        // password: process.env.REDIS_PASSWORD,
+        password: process.env.REDIS_PASSWORD,
       },
     },
     {
