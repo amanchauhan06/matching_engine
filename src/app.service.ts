@@ -31,7 +31,7 @@ export class AppService {
       data.quantity,
       0,
       data.company,
-      data.userId,
+      randomUUID(),
       data.orderTpe.toLowerCase() === 'buy' ? OrderType.buy : OrderType.sell,
       [],
       OrderStatus.pending,
