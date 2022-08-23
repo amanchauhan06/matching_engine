@@ -3,7 +3,6 @@ import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { ExchangeOrderRequestDTO, OrderStatus, OrderType } from './order.dto';
 import { OrderModel } from './order.model';
-import { OrderDto } from './stock_order.dto';
 import { Trade } from './trade.dto';
 
 enum CompleteOrderType {
@@ -24,54 +23,60 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async startTrading(data: OrderDto) {
-    console.log('Start Trading, data: ' + data.orderTpe);
-    this.addOrder(new ExchangeOrderRequestDTO(
-      data.price,
-      data.quantity,
-      0,
-      data.company,
-      data.userId,
-      data.orderTpe.toLowerCase() === 'buy' ? OrderType.buy : OrderType.sell,
-      [],
-      OrderStatus.pending,
-    ));
-    console.log('Start Trading Order 11');
+  // async startTrading(data: OrderDto) {
+   startTrading(data: string) {
+    console.log('Start Trading, data: ' + data);
+    this.startEngine(data);
     return 'Order Place Successfully';
-    // for (var i = 0; i < 25; i++) {
-    //   let price: number = parseFloat((639 + Math.random() * 2).toFixed(2));
-    //   let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
-    //   await new Promise((resolve) => setTimeout(resolve, 1000));
-    //   if (i % 2 !== 0) {
-    //     this.addOrder(
-    //       new ExchangeOrderRequestDTO(
-    //         price,
-    //         quantity,
-    //         0,
-    //         'IRCTC',
-    //         randomUUID(),
-    //         OrderType.buy,
-    //         [],
-    //         OrderStatus.pending,
-    //       ),
-    //     );
-    //   }
-    //   if (i % 2 === 0) {
-    //     this.addOrder(
-    //       new ExchangeOrderRequestDTO(
-    //         price,
-    //         quantity,
-    //         0,
-    //         'IRCTC',
-    //         randomUUID(),
-    //         OrderType.sell,
-    //         [],
-    //         OrderStatus.pending,
-    //       ),
-    //     );
-    //   }
-    // }
-    // return 'Order Placed Successfully';
+    
+    // this.addOrder(new ExchangeOrderRequestDTO(
+    //   data.price,
+    //   data.quantity,
+    //   0,
+    //   data.company,
+    //   data.userId,
+    //   data.orderTpe.toLowerCase() === 'buy' ? OrderType.buy : OrderType.sell,
+    //   [],
+    //   OrderStatus.pending,
+    // ));
+    // console.log('Start Trading Order 11');
+
+  }
+
+ async startEngine(data:string) {
+    for (var i = 1; i > 0; i++) {
+      let price: number = parseFloat((639 + Math.random() * 2).toFixed(2));
+      let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (i % 2 !== 0) {
+        this.addOrder(
+          new ExchangeOrderRequestDTO(
+            price,
+            quantity,
+            0,
+            data,
+            randomUUID(),
+            OrderType.buy,
+            [],
+            OrderStatus.pending,
+          ),
+        );
+      }
+      if (i % 2 === 0) {
+        this.addOrder(
+          new ExchangeOrderRequestDTO(
+            price,
+            quantity,
+            0,
+            data,
+            randomUUID(),
+            OrderType.sell,
+            [],
+            OrderStatus.pending,
+          ),
+        );
+      }
+    }
   }
 
   addOrder(order: ExchangeOrderRequestDTO) {

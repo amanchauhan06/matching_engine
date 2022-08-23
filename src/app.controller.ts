@@ -9,8 +9,10 @@ export class AppController {
     private readonly appService: AppService,
   ) {}
   @MessagePattern(process.env.STOCK || 'mrf')
-  handleStartTrading(@Payload() data: OrderDto) {
+  handleStartTrading(@Payload() data: string) {
+  // handleStartTrading(@Payload() data: OrderDto) {
     console.log('I am here');
+    // return  this.appService.startTrading(data);
     return  this.appService.startTrading(data);
   }
 }
