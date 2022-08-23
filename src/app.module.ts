@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { createClient } from '@redis/client';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { OrderRepository } from './order.repository';
 
 @Module({
   controllers: [AppController],
@@ -11,7 +10,7 @@ import { OrderRepository } from './order.repository';
       provide: 'REDIS_OPTIONS',
       useValue: {
         url: process.env.REDIS_URL,
-        password: process.env.REDIS_PASSWORD,
+        // password: process.env.REDIS_PASSWORD,
       },
     },
     {
