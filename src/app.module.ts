@@ -1,16 +1,25 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { createClient } from '@redis/client';
+import { ormConfig } from '../ormconfig';
 import { AppController } from './app.controller';
+// import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MasterEntity } from './entities/master.entity';
+import { OrderEntity } from './entities/order_entity';
 
 @Module({
   controllers: [AppController],
+  imports: [
+    TypeOrmModule.forRoot(ormConfig),
+    TypeOrmModule.forFeature([OrderEntity, MasterEntity]),
+  ],
   providers: [
     {
       provide: 'REDIS_OPTIONS',
       useValue: {
         url: process.env.REDIS_URL,
-        password: process.env.REDIS_PASSWORD,
+        // password: process.env.REDIS_PASSWORD,
       },
     },
     {
@@ -26,6 +35,5 @@ import { AppService } from './app.service';
     // OrderRepository,
   ],
   exports: ['REDIS_CLIENT'],
-  // imports: [CassandraModule],
 })
 export class AppModule {}
