@@ -5,12 +5,14 @@ import { ormConfig } from '../ormconfig';
 import { AppController } from './app.controller';
 // import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ScheduleModule } from '@nestjs/schedule';
 import { MasterEntity } from './entities/master.entity';
 import { OrderEntity } from './entities/order_entity';
 
 @Module({
   controllers: [AppController],
   imports: [
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(ormConfig),
     TypeOrmModule.forFeature([OrderEntity, MasterEntity]),
   ],

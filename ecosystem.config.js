@@ -16,6 +16,7 @@ module.exports = {
               "REDIS_URL":"redis://127.0.0.1:6379",
               "REDIS_PASSWORD": "max0E2YSIGMt3KLIDCJrc7KA2BqgAwQE7AzCaNH8u24=",
               "STOCK": "irctc",
+              "COMPANY": "IRCTC",
               "STOCK_PUBSUB": "irctc_pub",
 
           },
@@ -37,6 +38,7 @@ module.exports = {
               "REDIS_PASSWORD": "max0E2YSIGMt3KLIDCJrc7KA2BqgAwQE7AzCaNH8u24=",
               "POSTGRES_DATABASE":"postgres",
               "STOCK": "tata_mtr",
+              "COMPANY": "TATAMOTORS",
               "STOCK_PUBSUB": "tata_mtr_pub",
           },
         },
@@ -56,6 +58,7 @@ module.exports = {
               "REDIS_URL":"redis://127.0.0.1:6379",
               "REDIS_PASSWORD": "max0E2YSIGMt3KLIDCJrc7KA2BqgAwQE7AzCaNH8u24=",
               "STOCK": "mrf",
+              "COMPANY": "MRF",
               "STOCK_PUBSUB": "mrf_pub",
           },
         }
