@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
@@ -6,7 +7,6 @@ import { Repository } from 'typeorm';
 import { MasterEntity } from './entities/master.entity';
 import { OrderEntity } from './entities/order_entity';
 import { ExchangeOrderRequestDTO, OrderStatus, OrderType } from './order.dto';
-import { OrderModel } from './order.model';
 import { Trade } from './trade.dto';
 
 enum CompleteOrderType {
@@ -56,7 +56,7 @@ export class AppService {
     for (var i = 1; i > 0; i++) {
       let price: number = parseFloat((639 + Math.random() * 2).toFixed(2));
       let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 60000));
       if (i % 2 !== 0) {
         this.addOrder(
           new ExchangeOrderRequestDTO(
@@ -244,5 +244,10 @@ export class AppService {
     this.orderRepository.save(order);
     // return this.orderRepository.save(order);
     // this.orderRepo.savePricesToDB(order);
+  }
+
+  @Cron('0 30 9 * * 1-5')
+  handleEngineStartCron() {
+    this.startTrading(process.env.COMPANY || 'TATAMOTORS');
   }
 }
