@@ -1,11 +1,21 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { createClient } from '@redis/client';
+import { ormConfig } from '../ormconfig';
 import { AppController } from './app.controller';
+// import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { OrderRepository } from './order.repository';
+import { ScheduleModule } from '@nestjs/schedule';
+import { MasterEntity } from './entities/master.entity';
+import { OrderEntity } from './entities/order_entity';
 
 @Module({
   controllers: [AppController],
+  imports: [
+    ScheduleModule.forRoot(),
+    TypeOrmModule.forRoot(ormConfig),
+    TypeOrmModule.forFeature([OrderEntity, MasterEntity]),
+  ],
   providers: [
     {
       provide: 'REDIS_OPTIONS',
@@ -27,6 +37,5 @@ import { OrderRepository } from './order.repository';
     // OrderRepository,
   ],
   exports: ['REDIS_CLIENT'],
-  // imports: [CassandraModule],
 })
 export class AppModule {}
