@@ -21,7 +21,7 @@ import { OrderEntity } from './entities/order_entity';
       provide: 'REDIS_OPTIONS',
       useValue: {
         url: process.env.REDIS_URL,
-        password: process.env.REDIS_PASSWORD,
+        password: "redis",
       },
     },
     {
