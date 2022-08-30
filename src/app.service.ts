@@ -54,9 +54,9 @@ export class AppService {
 
   async startEngine(data: string) {
     for (var i = 1; i > 0; i++) {
-      let price: number = parseFloat((639 + Math.random() * 2).toFixed(2));
+      let price: number = parseFloat((Math.random() * 9 + 454.15).toFixed(2));
       let quantity: number = parseInt((Math.random() * 5 + 10).toFixed(2));
-      await new Promise((resolve) => setTimeout(resolve, 60000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       if (i % 2 !== 0) {
         this.addOrder(
           new ExchangeOrderRequestDTO(
