@@ -11,6 +11,7 @@ async function bootstrap() {
     transport: Transport.REDIS,
     options: {
       url: process.env.REDIS_URL||'redis://127.0.0.1:6379',
+      password: process.env.REDIS_PASSWORD||'redis',
     },
   }).then((val) => {
     console.log('Started');
